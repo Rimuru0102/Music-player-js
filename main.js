@@ -8,10 +8,14 @@ const cd = $(".cd");
 const playBtn = $(".btn-toggle-play");
 const player = $(".player");
 const progress = $("#progress");
+const nextBtn = $(".btn-next");
+const prevBtn = $(".btn-prev");
+const randomBtn = $(".btn-random");
 
 const app = {
     currentIndex: 0,
     isPlaying: false,
+    isRandom: false,
     songs: [
         {
             name: "Click Pow Get Down",
@@ -90,6 +94,16 @@ const app = {
         const _this = this;
         const cdWidth = cd.offsetWidth;
 
+        // xử lý khi cd quay / dừng
+        const cdThumbAnimate = cdThumb.animate(
+            [{ transform: "rotate(360deg)" }],
+            {
+                duration: 10000,
+                interation: Infinity,
+            }
+        );
+        cdThumbAnimate.pause();
+
         // Xử lý phóng to / thu nhỏ CD
         document.onscroll = function () {
             const scrollTop =
@@ -112,12 +126,14 @@ const app = {
         audio.onplay = function () {
             _this.isPlaying = true;
             player.classList.add("playing");
+            cdThumbAnimate.play();
         };
 
         // Khi song bị pause
         audio.onpause = function () {
             _this.isPlaying = false;
             player.classList.remove("playing");
+            cdThumbAnimate.pause();
         };
 
         // Khi tiến độ bài hát thay đổi
@@ -135,14 +151,64 @@ const app = {
             const seekTime = (audio.duration / 100) * e.target.value;
             audio.currentTime = seekTime;
         };
+
+        // Khi next song
+        nextBtn.onclick = function () {
+            if (_this.isRandom) {
+                _this.playRandomSong();
+            } else {
+                _this.nextSong();
+            }
+            audio.play();
+        };
+
+        // khi prev song
+        prevBtn.onclick = function () {
+            if (_this.isRandom) {
+                _this.playRandomSong();
+            } else {
+                _this.prevSong();
+            }
+            audio.play();
+        };
+
+        // Khi bật / tắt random song
+        randomBtn.onclick = function () {
+            _this.isRandom = !_this.isRandom;
+            randomBtn.classList.toggle("active", _this.isRandom);
+        };
     },
 
     loadCurrentSong: function () {
         heading.textContent = this.currentSong.name;
         cdThumb.style.backgroundImage = `url(${this.currentSong.image})`;
         audio.src = this.currentSong.path;
+    },
 
-        console.log(heading, cdThumb, audio);
+    nextSong: function () {
+        this.currentIndex++;
+        if (this.currentIndex >= this.songs.length) {
+            this.currentIndex = 0;
+        }
+        this.loadCurrentSong();
+    },
+
+    prevSong: function () {
+        this.currentIndex--;
+        if (this.currentIndex < 0) {
+            this.currentIndex = this.songs.length - 1;
+        }
+        this.loadCurrentSong();
+    },
+
+    playRandomSong: function () {
+        let newIndex;
+        do {
+            newIndex = Math.floor(Math.random() * this.songs.length);
+        } while (newIndex === this.currentIndex);
+
+        this.currentIndex = newIndex;
+        this.loadCurrentSong();
     },
 
     start: function () {
